@@ -32,6 +32,7 @@ script_name=$(basename "$0")
 required_packages=(zsh python3-pip at members supervisor gh curl git psmisc cmake)
 out_logs_file="$script_name"_"$now".out.logs
 err_log_file="$script_name"_"$now".err.logs
+admin_home=/home/$admin_user
 
 # sshd vars
 sshd_config_file=/etc/ssh/sshd_config
@@ -251,18 +252,18 @@ install_ohmyzsh() {
     return 0
 }
 
-generate_zshrc_config() {
-    # Adds prepared .zshrc file
+# generate_zshrc_config() {
+#     # Adds prepared .zshrc file
 
-    local github_token=$1
-    local zshrc_link=$2
-    local destination=$3
+#     local github_token=$1
+#     local zshrc_link=$2
+#     local destination=$3
 
-    run_as_admin "curl -sSL -H 'Authorization: token $github_token' $zshrc_link -o $destination/.zshrc"
-    echo -e ".zshrc file created at: $destination/.zshrc\n"
+#     run_as_admin "curl -sSL -H 'Authorization: token $github_token' $zshrc_link -o $destination/.zshrc"
+#     echo -e ".zshrc file created at: $destination/.zshrc\n"
 
-    return 0
-}
+#     return 0
+# }
 
 add_zsh_plugin() {
     # Adds provided oh my zsh custom plugin
@@ -303,7 +304,7 @@ configure_poetry() {
 }
 
 config_sshd() {
-    bachup_sshd "$sshd_config_file" "$sshd_backup_path"
+    backup_sshd "$sshd_config_file" "$sshd_backup_path"
 
     change_sshd_port "$my_ssh_port" "$sshd_config_file"
 
@@ -311,7 +312,6 @@ config_sshd() {
 
     change_sshd_client_alive "$client_alive_max" "$client_alive_interval" "$sshd_config_file"
 
-    add_to_denygroup "$limited_group" "$sshd_config_file"
 }
 
 # Main
@@ -335,7 +335,7 @@ main() {
 
 	install_ohmyzsh "$oh_my_zsh_install_link"
 
-	generate_zshrc_config "$gh_auth_token" "$zshrc_link" "$admin_home"
+	# generate_zshrc_config "$gh_auth_token" "$zshrc_link" "$admin_home"
 
 	add_zsh_plugin "$zsh_autosuggestions_link" "$zsh_autosuggestions_path"
 	add_zsh_plugin "$zsh_syntax_highlighting_link" "$zsh_syntax_highlighting_path"
@@ -354,3 +354,5 @@ main() {
 }
 
 main | tee "$out_logs_file"
+
+# TODO: add .zshrc template file
