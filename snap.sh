@@ -253,7 +253,7 @@ install_ohmyzsh() {
 generate_zshrc_config() {
 	# Adds prepared .zshrc file
 
-	cat <<'EOT' >>.zshrc
+	cat <<'EOT' >>$zsh_config_file
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
