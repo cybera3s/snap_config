@@ -34,10 +34,19 @@ validate_input() {
 
 # Get Data
 read -rp "Enter your admin username: " admin_user
+validate_input "$admin_user"
 echo ""
+
 read -rp "Enter your admin password: " admin_user_pw
+validate_input "$admin_user_pw"
 echo ""
-read -rp "Enter your desired ssh port: " my_ssh_port
+
+read -rp "Enter your desired ssh port (default: 9011): " my_ssh_port
+my_ssh_port="${my_ssh_port:-9011}"
+if ! [[ "$my_ssh_port" =~ ^[0-9]+$ ]] || ((my_ssh_port < 1024 || my_ssh_port > 65535)); then
+  echo -e "${RED}Invalid port number. Must be between 1024–65535.${NC}"
+  exit 1
+fi
 echo ""
 
 now=$(date +%F)
@@ -50,8 +59,8 @@ admin_home=/home/$admin_user
 # sshd vars
 sshd_config_file=/etc/ssh/sshd_config
 sshd_backup_path=/root/sshd_config_original
-client_alive_interval=10
-client_alive_max=1
+client_alive_interval=0
+client_alive_max=3
 
 # git vars
 git_username=cybera3s
