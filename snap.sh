@@ -173,7 +173,7 @@ add_sudo_user() {
 
 	# if user exists
 	if id "$username"; then
-		echo "user $username already Exists!"
+		echo -e "${YELLOW}User '$username' already exists.${NC}"
 		return 0
 	fi
 
@@ -182,9 +182,10 @@ add_sudo_user() {
 	local exit_code=$?
 
 	if [ "$exit_code" -eq 0 ]; then
-		echo "Super User with username '$username' added successfully!"
+		echo -e "${GREEN}User '$username' created successfully.${NC}"
 	else
-		echo "Error: Failed to add the user '$username'."
+		echo "${RED}Failed to add the user '$username'.${NC}"
+		exit 1
 	fi
 
 	return 0
