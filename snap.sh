@@ -16,26 +16,28 @@ BLUE="\033[0;34m"
 NC="\033[0m" # No Color
 
 # Show script banner
-clear -x
-echo -e "${BLUE}**********************************************************"
-echo -e "${CYAN}  VPS First-Time Setup Script"
-echo -e "${CYAN}  Author      : Ario"
-echo -e "${CYAN}  Version     : 1.2"
-echo -e "${CYAN}  Date        : $(date +%F)"
-echo -e "${CYAN}  Description : Automates initial VPS configuration"
-echo -e "${BLUE}**********************************************************${NC}"
+show_banner() {
+	clear -x
+	echo -e "${BLUE}**********************************************************"
+	echo -e "${CYAN}  VPS First-Time Setup Script"
+	echo -e "${CYAN}  Author      : Ario"
+	echo -e "${CYAN}  Version     : 1.2"
+	echo -e "${CYAN}  Date        : $(date +%F)"
+	echo -e "${CYAN}  Description : Automates initial VPS configuration"
+	echo -e "${BLUE}**********************************************************${NC}"
 
-# Summary of what the script will do
-echo -e "${YELLOW}This script will:${NC}"
-echo -e "${GREEN}  ✔ Update and upgrade your system"
-echo -e "${GREEN}  ✔ Add a new admin user with ZSH and Oh-My-Zsh"
-echo -e "${GREEN}  ✔ Configure and harden SSH (port, root access)"
-echo -e "${GREEN}  ✔ Install Docker and configure it without sudo"
-echo -e "${GREEN}  ✔ Install Poetry and basic Python tools"
-echo -e "${GREEN}  ✔ Configure Git"
-echo -e "${GREEN}  ✔ Enable and configure UFW firewall"
-echo -e "${GREEN}  ✔ Set up ZSH plugins and aliases${NC}"
-echo ""
+	# Summary of what the script will do
+	echo -e "${YELLOW}This script will:${NC}"
+	echo -e "${GREEN}  ✔ Update and upgrade your system"
+	echo -e "${GREEN}  ✔ Add a new admin user with ZSH and Oh-My-Zsh"
+	echo -e "${GREEN}  ✔ Configure and harden SSH (port, root access)"
+	echo -e "${GREEN}  ✔ Install Docker and configure it without sudo"
+	echo -e "${GREEN}  ✔ Install Poetry and basic Python tools"
+	echo -e "${GREEN}  ✔ Configure Git"
+	echo -e "${GREEN}  ✔ Enable and configure UFW firewall"
+	echo -e "${GREEN}  ✔ Set up ZSH plugins and aliases${NC}"
+	echo ""
+}
 
 # check if user is root
 if [[ $EUID -ne 0 ]]; then
@@ -481,10 +483,31 @@ configure_ufw() {
 	echo -e "${GREEN}UFW firewall enabled and configured successfully.${NC}"
 }
 
+show_system_info() {
+	echo -e "${BLUE}==================== System Information ====================${NC}"
+
+	echo -e "${CYAN}Hostname     :${NC} $(hostname)"
+	echo -e "${CYAN}OS           :${NC} $(lsb_release -ds 2>/dev/null || cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"')"
+	echo -e "${CYAN}Kernel       :${NC} $(uname -r)"
+	echo -e "${CYAN}Architecture :${NC} $(uname -m)"
+
+	echo -e "${CYAN}CPU          :${NC} $(lscpu | grep 'Model name' | awk -F: '{print $2}' | xargs)"
+	echo -e "${CYAN}Cores        :${NC} $(nproc)"
+
+	echo -e "${CYAN}Memory Total :${NC} $(free -h | awk '/^Mem:/ {print $2}')"
+	echo -e "${CYAN}Disk Total   :${NC} $(lsblk -d -o SIZE | grep -v SIZE | paste -sd+ - | bc) GB"
+
+	echo -e "${CYAN}Uptime       :${NC} $(uptime -p)"
+
+	echo -e "${BLUE}============================================================${NC}"
+	echo ""
+}
+
 # Main
 main() {
 	clear -x
-
+	show_banner
+	show_system_info
 	update_system
 
 	configure_ufw
