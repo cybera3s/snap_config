@@ -139,28 +139,24 @@ update_system() {
 
 install_requirements() {
 	# Installs provided required packages and remove extra ones
-
+	echo -e "${BLUE}Installing requirements...${NC}"
 	local packages=("$@")
 
-	echo "Installing requirements"
 	IFS=,
-	echo "Required packages are: ${packages[*]}"
+	echo "${BLUE}Required packages are: ${packages[*]}${NC}"
 
 	for pack in "${packages[@]}"; do
 
 		if log_command "apt install $pack -y"; then
-			echo "'$pack' Installed successfully!"
+			echo -e "${GREEN}'$pack' Installed successfully!${NC}"
 		else
-			echo "'$pack' Failed to install!"
+			echo -e "${RED}'$pack' Failed to install!${NC}"
 		fi
 	done
 
 	if log_command "apt autoremove -y"; then
-		echo "Removing unnecessary packages was successful!"
+		echo -e "${GREEN}Removed unnecessary packages.${NC}"
 	fi
-
-	echo -e "Requirements installed and extra dependencies was removed!\n"
-
 	return 0
 }
 
