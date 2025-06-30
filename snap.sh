@@ -4,18 +4,33 @@
 # Date Created: 2024/05/04
 # Date Modified: 2024/12/28
 # Description
-# First setup for bare vps
+# First setup for bare VPS
 # usage
 # snap.sh
 
+# Color definitions
+GREEN="\033[0;32m"
+RED="\033[0;31m"
+YELLOW="\033[1;33m"
+BLUE="\033[0;34m"
+NC="\033[0m" # No Color
+
 # check if user is root
 if [[ $EUID -ne 0 ]]; then
-	echo "Please Run it as 'root' user"
+	echo -e "${RED}Please Run it as 'root' user${NC}"
 	exit 0
 fi
 
 clear -x
-echo "********************************************************** Snap Config **********************************************************"
+echo -e "${BLUE}********************************************************** Snap Config **********************************************************${NC}"
+
+# Validate input
+validate_input() {
+	if [[ -z "$1" ]]; then
+		echo -e "${RED}Input cannot be empty. Exiting.${NC}"
+		exit 1
+	fi
+}
 
 # Get Data
 read -rp "Enter your admin username: " admin_user
@@ -45,7 +60,7 @@ git_email=cybera.3s@gmail.com
 # zsh vars
 zsh_config_file="$admin_home"/.zshrc
 zsh_custom_folder="$admin_home"/.oh-my-zsh/custom/plugins
-zshrc_link=https://raw.githubusercontent.com/cybera3s/vps_config/master/src/.zshrc
+# zshrc_link=https://raw.githubusercontent.com/cybera3s/vps_config/master/src/.zshrc
 oh_my_zsh_install_link=https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
 zsh_autosuggestions_link="https://github.com/zsh-users/zsh-autosuggestions.git"
 zsh_autosuggestions_path="$zsh_custom_folder"/zsh-autosuggestions
@@ -253,7 +268,7 @@ install_ohmyzsh() {
 generate_zshrc_config() {
 	# Adds prepared .zshrc file
 
-	cat <<'EOT' >>$zsh_config_file
+	cat <<'EOT' >>"$zsh_config_file"
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
@@ -380,6 +395,7 @@ add_zsh_plugin() {
 	echo -e "ZSH plugin cloned from '$plugin_link' to $path\n"
 	return 0
 }
+
 install_poetry() {
 	# Installs poetry system wide on provided path
 	local path=$1
@@ -390,6 +406,7 @@ install_poetry() {
 	echo -e "Poetry installed at '$path'\n"
 	return 0
 }
+
 configure_poetry() {
 	# Adds poetry to provided shell config path and sets virtualenvs.in-project true
 
