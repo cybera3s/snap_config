@@ -37,7 +37,6 @@ echo -e "${GREEN}  ✔ Enable and configure UFW firewall"
 echo -e "${GREEN}  ✔ Set up ZSH plugins and aliases${NC}"
 echo ""
 
-
 # check if user is root
 if [[ $EUID -ne 0 ]]; then
 	echo -e "${RED}Please Run it as 'root' user${NC}"
@@ -67,8 +66,8 @@ echo ""
 read -rp "Enter your desired ssh port (default: 9011): " my_ssh_port
 my_ssh_port="${my_ssh_port:-9011}"
 if ! [[ "$my_ssh_port" =~ ^[0-9]+$ ]] || ((my_ssh_port < 1024 || my_ssh_port > 65535)); then
-  echo -e "${RED}Invalid port number. Must be between 1024–65535.${NC}"
-  exit 1
+	echo -e "${RED}Invalid port number. Must be between 1024–65535.${NC}"
+	exit 1
 fi
 echo ""
 
@@ -118,11 +117,7 @@ log_command() {
 run_as_admin() {
 	# Takes a command and runs it as provided admin user
 	# if user not provided default is admin_user var
-
-	local command="$1"
-	local admin="${2:-$admin_user}"
-
-	sudo -u "$admin" bash -c "$command"
+	sudo -u "${2:-$admin_user}" bash -c "$1"
 }
 
 update_system() {
