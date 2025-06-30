@@ -123,15 +123,17 @@ run_as_admin() {
 update_system() {
 	# update and upgrade
 
-	echo "Update and upgradeing system"
+	echo -e "${BLUE}Updating system...${NC}\n"
 
+	echo -e "${BLUE}Checking internet connection...${NC}\n"
+	if ! ping -c 1 8.8.8.8 &>/dev/null; then
+		echo -e "${RED}Internet connection not available. Exiting...${NC}"
+		exit 1
+	fi
 	# NO input just default settings
 	export DEBIAN_FRONTEND=noninteractive
 
-	if apt update && DEBIAN_FRONTEND=noninteractive apt upgrade -y; then
-		echo -e "System was updated and upgraded successfully!\n"
-	fi
-
+	apt update && apt upgrade -y && echo -e "${GREEN}System updated successfully!${NC}"
 	return 0
 }
 
