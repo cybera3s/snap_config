@@ -75,7 +75,7 @@ echo ""
 
 now=$(date +%F)
 script_name=$(basename "$0")
-required_packages=(zsh python3-pip at members supervisor gh curl git psmisc cmake)
+required_packages=(zsh python3-pip at members supervisor gh curl git psmisc cmake ufw bc)
 out_logs_file="$script_name"_"$now".out.logs
 err_log_file="$script_name"_"$now".err.logs
 admin_home=/home/$admin_user
@@ -125,7 +125,7 @@ run_as_admin() {
 update_system() {
 	# update and upgrade
 
-	echo -e "${BLUE}Updating system...${NC}\n"
+	echo -e "${BLUE}Updating system...${NC}"
 
 	echo -e "${BLUE}Checking internet connection...${NC}\n"
 	if ! ping -c 1 8.8.8.8 &>/dev/null; then
@@ -135,7 +135,7 @@ update_system() {
 	# NO input just default settings
 	export DEBIAN_FRONTEND=noninteractive
 
-	apt update && apt upgrade -y && echo -e "${GREEN}System updated successfully!${NC}"
+	apt update && apt upgrade -y && echo -e "${GREEN}System updated successfully!${NC}\n"
 	return 0
 }
 
@@ -145,14 +145,14 @@ install_requirements() {
 	local packages=("$@")
 
 	IFS=,
-	echo "${BLUE}Required packages are: ${packages[*]}${NC}"
+	echo -e "${BLUE}Required packages are: ${packages[*]}${NC}"
 
 	for pack in "${packages[@]}"; do
 
 		if log_command "apt install $pack -y"; then
-			echo -e "${GREEN}'$pack' Installed successfully!${NC}"
+			echo -e "${GREEN}✔ '$pack' Installed successfully!${NC}"
 		else
-			echo -e "${RED}'$pack' Failed to install!${NC}"
+			echo -e "${RED}✖ '$pack' Failed to install!${NC}"
 		fi
 	done
 
@@ -174,7 +174,7 @@ add_sudo_user() {
 	local username=$1
 
 	# if user exists
-	if id "$username"; then
+	if id "$username" &>/dev/null; then
 		echo -e "${YELLOW}User '$username' already exists.${NC}"
 		return 0
 	fi
@@ -184,9 +184,9 @@ add_sudo_user() {
 	local exit_code=$?
 
 	if [ "$exit_code" -eq 0 ]; then
-		echo -e "${GREEN}User '$username' created successfully.${NC}"
+		echo -e "${GREEN}✔ User '$username' created successfully.${NC}\n"
 	else
-		echo "${RED}Failed to add the user '$username'.${NC}"
+		echo -e "${RED}✖ Failed to add the user '$username'.${NC}\n"
 		exit 1
 	fi
 
@@ -201,20 +201,18 @@ backup_sshd() {
 	local backup_path=$2
 
 	log_command "cp $sshd_path $backup_path"
-	echo -e "${GREEN}SSHD config backed up to $backup_path${NC}"
+	echo -e "${GREEN}✔ SSHD config backed up to '$backup_path'${NC}\n"
 }
 
 change_sshd_port() {
 	# Changes current ssh port number with provided port number
 
-	local current_port
 	local provided_port=$1
 	local sshd_config_path=$2
-	current_port=$(grep -oP "(?<=^Port )...." "$sshd_config_path")
 
 	log_command "sed -i 's/#\?Port .*/Port $provided_port/g' $sshd_config_path"
 
-	echo -e "${GREEN}Done!ssh port number changed from $current_port > $provided_port${NC}\n"
+	echo -e "${GREEN}✔ Done! ssh port number changed to '$provided_port'${NC}\n"
 	return 0
 }
 
@@ -236,7 +234,7 @@ change_root_login_status() {
 	fi
 
 	log_command "sed -i 's/PermitRootLogin $current_root_login_status/PermitRootLogin $status/g' $sshd_config_path"
-	echo -e "${GREEN}Done!root login status changed from '$current_root_login_status' to '$status'${NC}\n"
+	echo -e "${GREEN}✔ Done!root login status changed from '$current_root_login_status' to '$status'${NC}\n"
 
 	return 0
 
@@ -261,8 +259,8 @@ change_sshd_client_alive() {
 	log_command "sed -i 's/#\?ClientAliveCountMax $current_count/ClientAliveCountMax $count/' $sshd_config_path"
 	log_command "sed -i 's/#\?ClientAliveInterval $current_interval/ClientAliveInterval $interval/' $sshd_config_path"
 
-	echo -e "${GREEN}Done!ClientAliveCountMax changed from '$current_count' > '$count'${NC}"
-	echo -e "${GREEN}Done!ClientAliveInterval changed from '$current_interval' > '$interval'${NC}\n"
+	echo -e "${GREEN}Done!ClientAliveCountMax changed from '$current_count' to '$count'${NC}"
+	echo -e "${GREEN}Done!ClientAliveInterval changed from '$current_interval' to '$interval'${NC}\n"
 	return 0
 }
 
@@ -278,19 +276,13 @@ set_git_config() {
 	log_command "git config --system user.name $git_username"
 	log_command "git config --system user.email $git_email"
 
-	echo -e "${GREEN}GIT configurations is set${NC}\n"
+	echo -e "${GREEN}✔ GIT configurations is set${NC}\n"
 	return 0
 }
 
 install_ohmyzsh() {
-	# Installs oh my zsh for provided admin user
-	# with the oh my zsh install path
-
-	local install_path=$1
-
-	run_as_admin "sh -c $(curl -fsSL "$install_path")"
-	echo -e "${GREEN}Installed oh my zsh successfully!${NC}\n"
-	return 0
+	run_as_admin "sh -c \$(curl -fsSL '$1')"
+	echo -e "${GREEN}✔ Oh My Zsh installed.${NC}"
 }
 
 generate_zshrc_config() {
@@ -420,7 +412,7 @@ add_zsh_plugin() {
 
 	run_as_admin "git clone $plugin_link $path"
 
-	echo -e "${GREEN}ZSH plugin cloned from '$plugin_link' to $path${NC}\n"
+	echo -e "${GREEN}✔ ZSH plugin cloned from '$plugin_link' to '$path'${NC}\n"
 	return 0
 }
 
@@ -428,9 +420,8 @@ install_poetry() {
 	# Installs poetry system wide on provided path
 	local path=$1
 
-	echo -e "Installing Poetry!\n"
+	echo -e "${GREEN}***************** Installing Poetry *****************${NC}"
 	log_command "curl -sSL https://install.python-poetry.org | POETRY_HOME=$path python3 -"
-
 	echo -e "${GREEN}Poetry installed at '$path'${NC}\n"
 	return 0
 }
@@ -440,10 +431,10 @@ configure_poetry() {
 
 	local path=$1
 
-	echo "***************** Configuring Poetry *****************"
+	echo -e "${BLUE}***************** configuring Poetry *****************${NC}"
 
 	log_command "echo 'export PATH=\$PATH:/opt/poetry/bin/' >>$path"
-	echo "poetry exported at: $path"
+	echo -e "${GREEN}poetry exported at the zsh config file in: '$path'${NC}"
 
 	su - "$admin_user" -c "/opt/poetry/bin/poetry config virtualenvs.in-project true"
 	cmd=$(su - "$admin_user" -c "/opt/poetry/bin/poetry config virtualenvs.in-project")
@@ -464,30 +455,40 @@ config_sshd() {
 }
 
 configure_ufw() {
-	echo -e "${BLUE}Configuring UFW (Firewall)...${NC}"
+	echo -e "${BLUE}****************************${NC} Configuring UFW (Firewall) ${BLUE}****************************${NC}"
 
 	# Allow custom SSH port
-	log_command "ufw allow \"$my_ssh_port\"/tcp comment 'Allow SSH on custom port'"
-
-	# Optional: allow HTTP and HTTPS
-	log_command "ufw allow 80/tcp comment 'Allow HTTP'"
-	log_command "ufw allow 443/tcp comment 'Allow HTTPS'"
+	ufw allow "$my_ssh_port"/tcp
 
 	# Default policies
-	log_command "ufw default deny incoming"
-	log_command "ufw default allow outgoing"
+	ufw default deny incoming
+	ufw default allow outgoing
 
 	# Enable firewall
-	log_command "ufw --force enable"
+	ufw --force enable
 
 	echo -e "${GREEN}UFW firewall enabled and configured successfully.${NC}"
+}
+
+install_docker() {
+	echo -e "${BLUE}*************************** Installing Docker... *************************** ${NC}"
+	apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
+	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+	echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]     https://download.docker.com/linux/ubuntu     $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list >/dev/null
+	apt update
+	apt install -y docker-ce docker-ce-cli containerd.io
+
+	echo -e "${GREEN}Docker installed.${NC}"
+	usermod -aG docker "$admin_user"
+	usermod -aG docker root
+	echo -e "${GREEN}Docker access granted to '$admin_user' and root without sudo.${NC}"
 }
 
 show_system_info() {
 	echo -e "${BLUE}==================== System Information ====================${NC}"
 
 	echo -e "${CYAN}Hostname     :${NC} $(hostname)"
-	echo -e "${CYAN}OS           :${NC} $(lsb_release -ds 2>/dev/null || cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"')"
+	echo -e "${CYAN}OS           :${NC} $(lsb_release -ds 2>/dev/null || grep PRETTY_NAME /etc/os-release | cut -d= -f2 | tr -d '"')"
 	echo -e "${CYAN}Kernel       :${NC} $(uname -r)"
 	echo -e "${CYAN}Architecture :${NC} $(uname -m)"
 
