@@ -199,7 +199,7 @@ backup_sshd() {
 	local backup_path=$2
 
 	log_command "cp $sshd_path $backup_path"
-	echo -e "Done! sshd backup file saved at '$backup_path'\n"
+	echo -e "${GREEN}SSHD config backed up to $backup_path${NC}"
 }
 
 change_sshd_port() {
