@@ -212,7 +212,7 @@ change_sshd_port() {
 
 	log_command "sed -i 's/#\?Port .*/Port $provided_port/g' $sshd_config_path"
 
-	echo -e "Done!ssh port number changed from $current_port > $provided_port\n"
+	echo -e "${GREEN}Done!ssh port number changed from $current_port > $provided_port${NC}\n"
 	return 0
 }
 
@@ -234,7 +234,7 @@ change_root_login_status() {
 	fi
 
 	log_command "sed -i 's/PermitRootLogin $current_root_login_status/PermitRootLogin $status/g' $sshd_config_path"
-	echo -e "Done!root login status changed from $current_root_login_status > $status\n"
+	echo -e "${GREEN}Done!root login status changed from '$current_root_login_status' to '$status'${NC}\n"
 
 	return 0
 
@@ -259,8 +259,8 @@ change_sshd_client_alive() {
 	log_command "sed -i 's/#\?ClientAliveCountMax $current_count/ClientAliveCountMax $count/' $sshd_config_path"
 	log_command "sed -i 's/#\?ClientAliveInterval $current_interval/ClientAliveInterval $interval/' $sshd_config_path"
 
-	echo -e "Done!ClientAliveCountMax changed from $current_count > $count"
-	echo -e "Done!ClientAliveInterval changed from $current_interval > $interval\n"
+	echo -e "${GREEN}Done!ClientAliveCountMax changed from '$current_count' > '$count'${NC}"
+	echo -e "${GREEN}Done!ClientAliveInterval changed from '$current_interval' > '$interval'${NC}\n"
 	return 0
 }
 
@@ -276,7 +276,7 @@ set_git_config() {
 	log_command "git config --system user.name $git_username"
 	log_command "git config --system user.email $git_email"
 
-	echo -e "GIT configurations is set\n"
+	echo -e "${GREEN}GIT configurations is set${NC}\n"
 	return 0
 }
 
@@ -287,7 +287,7 @@ install_ohmyzsh() {
 	local install_path=$1
 
 	run_as_admin "sh -c $(curl -fsSL "$install_path")"
-	echo -e "Installed oh my zsh successfully!\n"
+	echo -e "${GREEN}Installed oh my zsh successfully!${NC}\n"
 	return 0
 }
 
@@ -418,7 +418,7 @@ add_zsh_plugin() {
 
 	run_as_admin "git clone $plugin_link $path"
 
-	echo -e "ZSH plugin cloned from '$plugin_link' to $path\n"
+	echo -e "${GREEN}ZSH plugin cloned from '$plugin_link' to $path${NC}\n"
 	return 0
 }
 
@@ -429,7 +429,7 @@ install_poetry() {
 	echo -e "Installing Poetry!\n"
 	log_command "curl -sSL https://install.python-poetry.org | POETRY_HOME=$path python3 -"
 
-	echo -e "Poetry installed at '$path'\n"
+	echo -e "${GREEN}Poetry installed at '$path'${NC}\n"
 	return 0
 }
 
@@ -445,7 +445,7 @@ configure_poetry() {
 
 	su - "$admin_user" -c "/opt/poetry/bin/poetry config virtualenvs.in-project true"
 	cmd=$(su - "$admin_user" -c "/opt/poetry/bin/poetry config virtualenvs.in-project")
-	echo -e "poetry config virtualenvs.in-project: $cmd\n"
+	echo -e "${GREEN}poetry config virtualenvs.in-project: $cmd${NC}\n"
 
 	return 0
 }
@@ -461,12 +461,33 @@ config_sshd() {
 
 }
 
+configure_ufw() {
+	echo -e "${BLUE}Configuring UFW (Firewall)...${NC}"
+
+	# Allow custom SSH port
+	log_command "ufw allow \"$my_ssh_port\"/tcp comment 'Allow SSH on custom port'"
+
+	# Optional: allow HTTP and HTTPS
+	log_command "ufw allow 80/tcp comment 'Allow HTTP'"
+	log_command "ufw allow 443/tcp comment 'Allow HTTPS'"
+
+	# Default policies
+	log_command "ufw default deny incoming"
+	log_command "ufw default allow outgoing"
+
+	# Enable firewall
+	log_command "ufw --force enable"
+
+	echo -e "${GREEN}UFW firewall enabled and configured successfully.${NC}"
+}
+
 # Main
 main() {
 	clear -x
 
 	update_system
 
+	configure_ufw
 	install_requirements "${required_packages[@]}"
 
 	# Create a new admin user
