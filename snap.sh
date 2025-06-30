@@ -15,6 +15,29 @@ YELLOW="\033[1;33m"
 BLUE="\033[0;34m"
 NC="\033[0m" # No Color
 
+# Show script banner
+clear -x
+echo -e "${BLUE}**********************************************************"
+echo -e "${CYAN}  VPS First-Time Setup Script"
+echo -e "${CYAN}  Author      : Ario"
+echo -e "${CYAN}  Version     : 1.2"
+echo -e "${CYAN}  Date        : $(date +%F)"
+echo -e "${CYAN}  Description : Automates initial VPS configuration"
+echo -e "${BLUE}**********************************************************${NC}"
+
+# Summary of what the script will do
+echo -e "${YELLOW}This script will:${NC}"
+echo -e "${GREEN}  ✔ Update and upgrade your system"
+echo -e "${GREEN}  ✔ Add a new admin user with ZSH and Oh-My-Zsh"
+echo -e "${GREEN}  ✔ Configure and harden SSH (port, root access)"
+echo -e "${GREEN}  ✔ Install Docker and configure it without sudo"
+echo -e "${GREEN}  ✔ Install Poetry and basic Python tools"
+echo -e "${GREEN}  ✔ Configure Git"
+echo -e "${GREEN}  ✔ Enable and configure UFW firewall"
+echo -e "${GREEN}  ✔ Set up ZSH plugins and aliases${NC}"
+echo ""
+
+
 # check if user is root
 if [[ $EUID -ne 0 ]]; then
 	echo -e "${RED}Please Run it as 'root' user${NC}"
@@ -37,7 +60,7 @@ read -rp "Enter your admin username: " admin_user
 validate_input "$admin_user"
 echo ""
 
-read -rp "Enter your admin password: " admin_user_pw
+read -rsp "Enter your admin password: " admin_user_pw
 validate_input "$admin_user_pw"
 echo ""
 
