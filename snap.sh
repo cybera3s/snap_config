@@ -301,7 +301,7 @@ install_ohmyzsh() {
 	local url="${1:-https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh}"
 
 	if [ -d "$HOME/.oh-my-zsh" ]; then
-		echo -e "${YELLOW}⚠ Oh My Zsh is already installed at ~/.oh-my-zsh. Skipping installation.${NC}"
+		echo -e "${YELLOW}⚠ Oh My Zsh is already installed at $HOME/.oh-my-zsh. Skipping installation.${NC}"
 		return 0
 	fi
 
@@ -439,19 +439,41 @@ EOT
 }
 
 add_zsh_plugin() {
-	local plugin_link=$1
-	local path=$2
+	local plugin_link="$1"
+	local path="$2"
 
-	git clone "$plugin_link" "$path"
+	# Check required arguments
+	if [[ -z "$plugin_link" || -z "$path" ]]; then
+		echo "❌ Missing plugin link or path." >&2
+		return 1
+	fi
 
-	echo -e "${GREEN}✔ ZSH plugin cloned from '$plugin_link' to '$path'${NC}\n"
-	return 0
+	# Check if git is installed
+	if ! command -v git &>/dev/null; then
+		echo "❌ git is not installed. Cannot clone plugin." >&2
+		return 2
+	fi
+
+	# Check if plugin directory already exists
+	if [[ -d "$path" ]]; then
+		echo "ℹ️ Plugin already exists at: $path"
+		return 0
+	fi
+
+	# Attempt to clone
+	if git clone "$plugin_link" "$path"; then
+		echo -e "${GREEN:-}✔ ZSH plugin cloned from '$plugin_link' to '$path'${NC:-}\n"
+	else
+		echo "❌ Failed to clone plugin from $plugin_link" >&2
+		return 3
+	fi
 }
 
 add_zsh_plugins() {
 	add_zsh_plugin "https://github.com/zsh-users/zsh-autosuggestions.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
 	add_zsh_plugin "https://github.com/zsh-users/zsh-syntax-highlighting.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
 }
+
 
 install_poetry() {
 	# Installs poetry system wide on provided path
