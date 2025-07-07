@@ -338,14 +338,18 @@ install_ohmyzsh() {
 }
 
 generate_zshrc_config() {
-	local zsh_config_file="$HOME/.zshrc"
+	local user=$1
+	local user_home=$(getent passwd "$user" | cut -d: -f6)
+	local zsh_config_file="$user_home/.zshrc"
 
 	if [[ ! -e "$zsh_config_file" ]]; then
 		echo -e "${RED}'${zsh_config_file}' does not exists so create it${NC}"
 		touch "${zsh_config_file}"
+	else
+		echo -e "${GREEN}'${zsh_config_file}' found.${NC}"
 	fi
 
-	cat <<'EOT' >>"$zsh_config_file"
+	cat <<'EOT' >"$zsh_config_file"
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
@@ -458,6 +462,8 @@ alias cls=clear
 export PATH="/home/ario/.local/bin:$PATH"
 EOT
 
+	chown "$user":"$user" "$zsh_config_file"
+	chmod 775 "$zsh_config_file"
 	return 0
 }
 
@@ -657,7 +663,8 @@ main() {
 
 	install_ohmyzsh
 
-	generate_zshrc_config
+	generate_zshrc_config "$admin_user"
+	generate_zshrc_config root
 
 	add_zsh_plugins
 
