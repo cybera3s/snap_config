@@ -281,7 +281,19 @@ set_git_config() {
 }
 
 install_ohmyzsh() {
-	run_as_admin "sh -c \$(curl -fsSL '$1')"
+	local url="${1:-https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh}"
+
+	if [ -d "$HOME/.oh-my-zsh" ]; then
+		echo -e "${YELLOW}⚠ Oh My Zsh is already installed at ~/.oh-my-zsh. Skipping installation.${NC}"
+		return 0
+	fi
+
+	if ! command -v zsh >/dev/null 2>&1; then
+		echo -e "${YELLOW}⚠ Zsh is not installed. Please install it first.${NC}"
+		return 1
+	fi
+
+	sh -c "$(curl -fsSL "$url")"
 	echo -e "${GREEN}✔ Oh My Zsh installed.${NC}"
 }
 
@@ -476,7 +488,7 @@ install_docker() {
 	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 	echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]     https://download.docker.com/linux/ubuntu     $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list >/dev/null
 	apt update
-	apt install -y docker-ce docker-ce-cli containerd.io
+	apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
 	echo -e "${GREEN}Docker installed.${NC}"
 	usermod -aG docker "$admin_user"
@@ -525,7 +537,7 @@ main() {
 
 	set_git_config "$git_username" "$git_email"
 
-	install_ohmyzsh "$oh_my_zsh_install_link"
+	run_as_admin 'install_ohmyzsh "$oh_my_zsh_install_link"'
 
 	generate_zshrc_config
 
