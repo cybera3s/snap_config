@@ -297,11 +297,11 @@ set_git_config() {
 	return 0
 }
 
-install_ohmyzsh() {
+install_ohmyzsh_root() {
 	local url="${1:-https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh}"
 
 	if [ -d "$HOME/.oh-my-zsh" ]; then
-		echo -e "${YELLOW}⚠ Oh My Zsh is already installed at $HOME/.oh-my-zsh. Skipping installation.${NC}"
+		echo -e "${YELLOW}⚠ Oh My Zsh is already installed at '$HOME/.oh-my-zsh'. Skipping installation.${NC}"
 		return 0
 	fi
 
@@ -312,6 +312,29 @@ install_ohmyzsh() {
 
 	sh -c "$(curl -fsSL "$url")"
 	echo -e "${GREEN}✔ Oh My Zsh installed.${NC}"
+}
+
+install_ohmyzsh_admin_user() {
+	local admin_user=${1:-admin_user}
+	local url="${2:-https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh}"
+
+	if [ -d "$HOME/.oh-my-zsh" ]; then
+		echo -e "${YELLOW}⚠ Oh My Zsh is already installed at '/home/${admin_user}/.oh-my-zsh'. Skipping installation.${NC}"
+		return 0
+	fi
+
+	if ! command -v zsh >/dev/null 2>&1; then
+		echo -e "${YELLOW}⚠ Zsh is not installed. Please install it first.${NC}"
+		return 1
+	fi
+
+	run_as_admin ario 'sh -c "$(curl -fsSL "$url")"'
+	echo -e "${GREEN}✔ Oh My Zsh installed.${NC}"
+}
+
+install_ohmyzsh() {
+	install_ohmyzsh_root
+	install_ohmyzsh_admin_user "$admin_user"
 }
 
 generate_zshrc_config() {
@@ -438,13 +461,20 @@ EOT
 	return 0
 }
 
-add_zsh_plugin() {
+add_zsh_plugin_root() {
 	local plugin_link="$1"
-	local path="$2"
+
+	local plugin_folder_name=$(basename "$plugin_link" | cut -d. -f 1)
+	local path="/root/.oh-my-zsh/custom/plugins/${plugin_folder_name}"
 
 	# Check required arguments
 	if [[ -z "$plugin_link" || -z "$path" ]]; then
 		echo "❌ Missing plugin link or path." >&2
+		return 1
+	fi
+
+	if [[ ! "$plugin_link" =~ ^https://github\.com/[^/]+/[^/]+/?$ ]]; then
+		echo "❌ invalid plugin link!" >&2
 		return 1
 	fi
 
@@ -456,7 +486,7 @@ add_zsh_plugin() {
 
 	# Check if plugin directory already exists
 	if [[ -d "$path" ]]; then
-		echo "ℹ️ Plugin already exists at: $path"
+		echo "ℹ️  Plugin already exists at: '$path'"
 		return 0
 	fi
 
@@ -469,11 +499,52 @@ add_zsh_plugin() {
 	fi
 }
 
-add_zsh_plugins() {
-	add_zsh_plugin "https://github.com/zsh-users/zsh-autosuggestions.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
-	add_zsh_plugin "https://github.com/zsh-users/zsh-syntax-highlighting.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+add_zsh_plugin_admin_user() {
+	local plugin_link="$1"
+	local user="$2"
+
+	local plugin_folder_name=$(basename "$1" | cut -d. -f 1)
+	local path="/home/${user}/.oh-my-zsh/custom/plugins/${plugin_folder_name}"
+
+	# Check required arguments
+	if [[ -z "$plugin_link" || -z "$user" ]]; then
+		echo "❌ Missing plugin link or user." >&2
+		return 1
+	fi
+
+	if [[ ! "$plugin_link" =~ ^https://github\.com/[^/]+/[^/]+/?$ ]]; then
+		echo "❌ invalid plugin link!" >&2
+		return 1
+	fi
+
+	# Check if git is installed
+	if ! command -v git &>/dev/null; then
+		echo "❌ git is not installed. Cannot clone plugin." >&2
+		return 2
+	fi
+
+	# Check if plugin directory already exists
+	if [[ -d "$path" ]]; then
+		echo "ℹ️  Plugin already exists at: '$path'"
+		return 0
+	fi
+
+	# Attempt to clone
+	if run_as_admin "git clone $plugin_link $path"; then
+		echo -e "${GREEN:-}✔ ZSH plugin cloned from '$plugin_link' to '$path'${NC:-}\n"
+	else
+		echo "❌ Failed to clone plugin from $plugin_link" >&2
+		return 3
+	fi
 }
 
+add_zsh_plugins() {
+	add_zsh_plugin_root "https://github.com/zsh-users/zsh-autosuggestions.git"
+	add_zsh_plugin_root "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+
+	add_zsh_plugin_admin_user "https://github.com/zsh-users/zsh-autosuggestions.git" "$admin_user"
+	add_zsh_plugin_admin_user "https://github.com/zsh-users/zsh-syntax-highlighting.git" "$admin_user"
+}
 
 install_poetry() {
 	# Installs poetry system wide on provided path
@@ -584,12 +655,11 @@ main() {
 
 	set_git_config "$git_username" "$git_email"
 
-	run_as_admin "install_ohmyzsh '$oh_my_zsh_install_link'"
+	install_ohmyzsh
 
-	run_as_admin "generate_zshrc_config"
+	generate_zshrc_config
 
-	add_zsh_plugin "$zsh_autosuggestions_link" "$zsh_autosuggestions_path"
-	add_zsh_plugin "$zsh_syntax_highlighting_link" "$zsh_syntax_highlighting_path"
+	add_zsh_plugins
 
 	# chenage owner and group to admin user
 	chown -R "$admin_user:$admin_user" "$admin_home"
