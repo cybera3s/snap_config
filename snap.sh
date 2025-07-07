@@ -117,9 +117,26 @@ log_command() {
 }
 
 run_as_admin() {
-	# Takes a command and runs it as provided admin user
-	# if user not provided default is admin_user var
-	sudo -u "${2:-$admin_user}" bash -c "$1"
+	local user="${1:-admin_user}"
+	shift
+
+	if [[ -z "$user" || $# -eq 0 ]]; then
+		echo "❌ Error: user and command must be specified!" >&2
+		return 1
+	fi
+
+	if ! id "$user" &>/dev/null; then
+		echo "❌ Error: user '$user' does not exist." >&2
+		return 1
+	fi
+
+	if ! command -v sudo &>/dev/null; then
+		echo "❌ Error: 'sudo' is not installed or not in PATH." >&2
+		return 1
+	fi
+
+	# Combine the args into a command string and run it as the target user in a new bash shell
+	sudo -u "$user" bash -c "$*"
 }
 
 update_system() {
@@ -298,7 +315,12 @@ install_ohmyzsh() {
 }
 
 generate_zshrc_config() {
-	# Adds prepared .zshrc file
+	local zsh_config_file="$HOME/.zshrc"
+
+	if [[ ! -e "$zsh_config_file" ]]; then
+		echo -e "${RED}'${zsh_config_file}' does not exists so create it${NC}"
+		touch "${zsh_config_file}"
+	fi
 
 	cat <<'EOT' >>"$zsh_config_file"
 # If you come from bash you might have to change your $PATH.
@@ -417,15 +439,18 @@ EOT
 }
 
 add_zsh_plugin() {
-	# Adds provided oh my zsh custom plugin
-
 	local plugin_link=$1
 	local path=$2
 
-	run_as_admin "git clone $plugin_link $path"
+	git clone "$plugin_link" "$path"
 
 	echo -e "${GREEN}✔ ZSH plugin cloned from '$plugin_link' to '$path'${NC}\n"
 	return 0
+}
+
+add_zsh_plugins() {
+	add_zsh_plugin "https://github.com/zsh-users/zsh-autosuggestions.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+	add_zsh_plugin "https://github.com/zsh-users/zsh-syntax-highlighting.git" "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
 }
 
 install_poetry() {
@@ -537,9 +562,9 @@ main() {
 
 	set_git_config "$git_username" "$git_email"
 
-	run_as_admin 'install_ohmyzsh "$oh_my_zsh_install_link"'
+	run_as_admin "install_ohmyzsh '$oh_my_zsh_install_link'"
 
-	generate_zshrc_config
+	run_as_admin "generate_zshrc_config"
 
 	add_zsh_plugin "$zsh_autosuggestions_link" "$zsh_autosuggestions_path"
 	add_zsh_plugin "$zsh_syntax_highlighting_link" "$zsh_syntax_highlighting_path"
