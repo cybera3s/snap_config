@@ -674,7 +674,7 @@ main() {
 	install_poetry "$poetry_home"
 
 	configure_poetry "$zsh_config_file"
-	configure_poetry "/root/.bashrc"
+	configure_poetry "/root/.zshrc"
 
 	# chenage owner and group to admin user
 	chown -R "$admin_user:$admin_user" "$admin_home"
